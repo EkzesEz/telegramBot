@@ -37,7 +37,7 @@ application = tornado.web.Application([
 if __name__ == '__main__':
     signal.signal(signal.SIGTERM, signal_term_handler)
     try:
-        set_hook = api.get(cfg.URL + "setwebhook?url=" + cfg.MyURL)
+        set_hook = api.get(URL + "setwebhook?url=" + cfg.MyURL)
         if set_hook.status_code != 200:
             print(set_hook.status_code, set_hook.text, sep='\n')
             print("Cannot set webhook")
