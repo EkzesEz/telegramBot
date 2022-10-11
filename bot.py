@@ -8,6 +8,7 @@ import logging
 
 URL = 'https://api.telegram.org/bot%s/' % cfg.BOT_TOKEN
 
+logging.basicConfig(level=logging.INFO, filename=cfg.LogPath, format="%(asctime)s %(levelname)s %(message)s")
 
 class Handler(tornado.web.RequestHandler):
     def post(self):
@@ -49,14 +50,22 @@ def reply(chat_id, response):
     return 0
 
 
-logging.basicConfig(level=logging.INFO, filename=cfg.LogPath, format="%(asctime)s %(levelname)s %(message)s")
-
-
+def init_cmd(dict):
+    cmd_file = open(cfg.commands_path)
+    for line in cmd_file:
+        cmd, resp = line.split()
+        dict[cmd] = resp
+    cmd_file.close()
 
 
 
 if __name__ == '__main__':
     signal.signal(signal.SIGTERM, signal_term_handler)
+
+    commands = {}
+
+    init_cmd(commands)
+    
     try:
         set_hook = api.get(URL + "setwebhook?url=" + cfg.MyURL)
         if set_hook.status_code != 200:
