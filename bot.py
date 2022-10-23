@@ -1,11 +1,12 @@
-import config as cfg
-import tornado.web
-import tornado.ioloop
-import requests
-import signal
 import logging
-from methods import weather
+import signal
 
+import requests
+import tornado.ioloop
+import tornado.web
+
+import config as cfg
+from methods import weather
 
 URL = 'https://api.telegram.org/bot%s/' % cfg.BOT_TOKEN
 
