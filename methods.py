@@ -1,8 +1,9 @@
-import requests
-import config as cfg
-import tornado.web
 import logging
 
+import requests
+import tornado.web
+
+import config as cfg
 
 weather_url = 'https://api.openweathermap.org/data/2.5/'
 
@@ -18,8 +19,14 @@ def get_weather(city_name, api_key=cfg.weather_api_key):
 
 def weather(chat, city):
     data = get_weather(city)
-    if data['cod'] != 200:
-        return "Произошла ошибка. Попробуйте еще раз"
+    cod = data['cod']
+    if cod != 200:
+        logging.error(f"cod = {cod}, {type(cod)}")
+        match cod:
+            case '404':
+                return "Город не найден. Попробуйте еще раз"
+            case _:
+                return f"Произошла ошибка {cod}. Попробуйте еще раз"
     main_data = data['weather'][0]['main']
     temp = data['main']['temp'] - 273.1
     temp_f = 1.8 * temp + 32
