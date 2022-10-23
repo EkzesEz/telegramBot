@@ -1,0 +1,3 @@
+/start Вас приветствует MultiToolBot!\nЧтобы узнать мои возможности введите /commands
+/commands Введите /weather чтобы узнать погоду
+/weather Введите город:

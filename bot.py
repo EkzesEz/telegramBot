@@ -4,11 +4,15 @@ import tornado.ioloop
 import requests
 import signal
 import logging
+from methods import weather
 
 
 URL = 'https://api.telegram.org/bot%s/' % cfg.BOT_TOKEN
 
-logging.basicConfig(level=logging.INFO, filename=cfg.LogPath, format="%(asctime)s %(levelname)s %(message)s")
+
+logging.basicConfig(level=logging.INFO, filename=cfg.LogPath,
+                    format="%(asctime)s %(levelname)s %(message)s")
+
 
 class Handler(tornado.web.RequestHandler):
     def post(self):
@@ -19,14 +23,23 @@ class Handler(tornado.web.RequestHandler):
             message = request['message']
             text = message.get('text')
             chat_id = message['chat']['id']
-            if 'entities' in message:
-                if message['entities'][0]['type'] == 'bot_command':
-                    if reply(chat_id, f"You sent command: {text}\nThank you!"):
-                        logging.info("Message sent!")
-                    else:
-                        logging.info("Cant send msg")
+            if chat_id in to_ans['weather']:
+                logging.info(
+                    f"trying to post weather in chat id = {chat_id}, city = {text}")
+                reply(chat_id, weather(chat_id, text))
+                to_ans['weather'].pop(to_ans['weather'].index(chat_id))
             else:
-                reply(chat_id, f"You sent text: {text}\nThank you!")
+                if 'entities' in message:
+                    if message['entities'][0]['type'] == 'bot_command':
+                        response = commands.get(text)
+                        reply(chat_id, response.replace('\\n', '\n'))
+                        match text:
+                            case '/weather':
+                                to_ans['weather'].append(chat_id)
+                                logging.info(
+                                    f"In case weather, to_ans = {to_ans}")
+                else:
+                    reply(chat_id, f"You sent text: {text}\nThank you!")
         except Exception as exc:
             logging.error(str(exc))
 
@@ -43,20 +56,19 @@ def signal_term_handler(num, frame):
     exit(1)
 
 
+def init_cmd(dict):
+    cmd_file = open(cfg.commands_path)
+    for line in cmd_file:
+        cmd, resp = line.split(maxsplit=1)
+        dict[cmd] = resp
+    cmd_file.close()
+
+
 def reply(chat_id, response):
     logging.info("I'm in reply. Trying to send %s" % response)
     if api.post(URL + 'sendMessage', data={'chat_id': chat_id, 'text': response}):
         return 1
     return 0
-
-
-def init_cmd(dict):
-    cmd_file = open(cfg.commands_path)
-    for line in cmd_file:
-        cmd, resp = line.split()
-        dict[cmd] = resp
-    cmd_file.close()
-
 
 
 if __name__ == '__main__':
@@ -65,7 +77,9 @@ if __name__ == '__main__':
     commands = {}
 
     init_cmd(commands)
-    
+
+    to_ans = {'weather': []}
+
     try:
         set_hook = api.get(URL + "setwebhook?url=" + cfg.MyURL)
         if set_hook.status_code != 200:
