@@ -27,8 +27,10 @@ class Handler(tornado.web.RequestHandler):
             if chat_id in to_ans['weather']:
                 logging.info(
                     f"trying to post weather in chat id = {chat_id}, city = {text}")
-                reply(chat_id, weather(chat_id, text))
                 to_ans['weather'].pop(to_ans['weather'].index(chat_id))
+                signal.alarm(3)
+                reply(chat_id, weather(text))
+                signal.alarm(0)
             else:
                 if 'entities' in message:
                     if message['entities'][0]['type'] == 'bot_command':
@@ -41,6 +43,9 @@ class Handler(tornado.web.RequestHandler):
                                     f"In case weather, to_ans = {to_ans}")
                 else:
                     reply(chat_id, f"You sent text: {text}\nThank you!")
+        except TimeoutError as exc:
+            reply(chat_id, "Weather server is unreachable.")
+            logging.error(exc)
         except Exception as exc:
             logging.error(str(exc))
 
@@ -51,10 +56,14 @@ application = tornado.web.Application([
 ])
 
 
-def signal_term_handler(num, frame):
-    print("STM called")
+def signal_term_handler(signum, frame):
     logging.info("Bot stopped")
     exit(1)
+
+
+def signal_alrm_handler(signum, frame):
+    logging.error("SAH called")
+    raise TimeoutError("Weather Api didn't answer in 3 sec")
 
 
 def init_cmd(dict):
@@ -74,6 +83,7 @@ def reply(chat_id, response):
 
 if __name__ == '__main__':
     signal.signal(signal.SIGTERM, signal_term_handler)
+    signal.signal(signal.SIGALRM, signal_alrm_handler)
 
     commands = {}
 

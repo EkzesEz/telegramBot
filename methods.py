@@ -5,19 +5,17 @@ import tornado.web
 
 import config as cfg
 
+
 weather_url = 'https://api.openweathermap.org/data/2.5/'
 
 
 def get_weather(city_name, api_key=cfg.weather_api_key):
-    try:
-        response = requests.get(weather_url + 'weather',
-                                params={'q': f"{city_name}", 'appid': api_key})
-    except:
-        return 0
+    response = requests.get(weather_url + 'weather',
+                            params={'q': f"{city_name}", 'appid': api_key})
     return response.json()
 
 
-def weather(chat, city):
+def weather(city):
     data = get_weather(city)
     cod = data['cod']
     if cod != 200:
